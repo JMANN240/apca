@@ -9,12 +9,50 @@ use chrono::Utc;
 
 use num_decimal::Num;
 
+use regex::Regex;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_urlencoded::to_string as to_query;
 
 use crate::data::DATA_BASE_URL;
 use crate::Str;
+
+
+/// Represents a contract
+#[derive(Debug)]
+pub struct Contract {
+  /// The name of the underlying symbol.
+  pub underlying_symbol: String,
+  /// The date on which this contract expires.
+  pub expiration_date: NaiveDate,
+  /// The type of option that this contract represents.
+  pub option_type: OptionType,
+  /// The strike price of the contract.
+  pub strike_price: Num
+}
+
+
+impl Contract {
+  /// Extracts contract information from a contract name.
+  pub fn parse(name: &str) -> Option<Self> {
+    let re = Regex::new(r"^(?<symbol>\D{1,6})(?<year>\d{2})(?<month>\d{2})(?<day>\d{2})(?<type>C|P)(?<millidollars>\d{8})").unwrap();
+    match re.captures(name) {
+      Some(captures) => {
+        let year = 2000 + captures["year"].parse::<i32>().unwrap();
+        let month = captures["month"].parse::<u32>().unwrap();
+        let day = captures["day"].parse::<u32>().unwrap();
+        let expiration_date = NaiveDate::from_ymd_opt(year, month, day).unwrap();
+        Some(Contract {
+          underlying_symbol: captures["symbol"].to_string(),
+          expiration_date: expiration_date,
+          option_type: OptionType::try_from(&captures["type"]).unwrap(),
+          strike_price: Num::new(captures["millidollars"].parse::<u32>().unwrap(), 1000)
+        })
+      },
+      None => None
+    }
+  }
+}
 
 
 /// An enumeration of the various supported feeds.
@@ -40,6 +78,24 @@ pub enum OptionType {
   /// Put option.
   #[serde(rename = "put")]
   Put,
+}
+
+
+/// Represents an error with parsing the option type
+#[derive(Clone, Copy, Debug)]
+pub struct OptionTypeParsingError;
+
+
+impl TryFrom<&str> for OptionType {
+  type Error = OptionTypeParsingError;
+
+  fn try_from(string: &str) -> Result<Self, Self::Error> {
+    match string {
+      "C" => Ok(Self::Call),
+      "P" => Ok(Self::Put),
+      _ => Err(OptionTypeParsingError),
+    }
+  }
 }
 
 
@@ -327,8 +383,6 @@ Endpoint! {
 mod tests {
   use super::*;
 
-  use std::ops::RangeInclusive;
-
   use http_endpoint::Endpoint;
 
   use serde_json::from_str as from_json;
@@ -337,6 +391,17 @@ mod tests {
 
   use crate::api_info::ApiInfo;
   use crate::Client;
+
+
+  #[test]
+  fn parse_option_name() {
+    let contract = Contract::parse("INTC250321C00037500").unwrap();
+
+    assert_eq!(&contract.underlying_symbol, "INTC");
+    assert_eq!(&contract.expiration_date, &NaiveDate::from_ymd_opt(2025, 3, 21).unwrap());
+    assert_eq!(&contract.strike_price, &Num::new(375, 10));
+    assert_eq!(&contract.option_type, &OptionType::Call);
+  }
 
 
   /// Verify that we can properly parse a reference bar response.
@@ -538,6 +603,7 @@ mod tests {
     .init("AAPL");
 
     let res = client.issue::<List>(&request).await.unwrap();
+    println!("{:?}", res);
     let snapshots = res.snapshots;
 
     assert_eq!(snapshots.len(), 2);
@@ -566,46 +632,4 @@ mod tests {
     assert_eq!(new_snapshots.len(), 2);
     assert!(res.next_page_token.is_some())
   }
-
-  /*
-  /// Check that we fail as expected when an invalid page token is
-  /// specified.
-  #[test(tokio::test)]
-  async fn invalid_page_token() {
-    let api_info = ApiInfo::from_env().unwrap();
-    let client = Client::new(api_info);
-
-    let start = DateTime::from_str("2018-12-03T21:47:00Z").unwrap();
-    let end = DateTime::from_str("2018-12-07T21:47:00Z").unwrap();
-    let request = ListReqInit {
-      page_token: Some("123456789abcdefghi".to_string()),
-      ..Default::default()
-    }
-    .init("SPY", start, end, TimeFrame::OneMinute);
-
-    let err = client.issue::<List>(&request).await.unwrap_err();
-    match err {
-      RequestError::Endpoint(ListError::InvalidInput(_)) => (),
-      _ => panic!("Received unexpected error: {err:?}"),
-    };
-  }
-
-  /// Verify that we error out as expected when attempting to retrieve
-  /// aggregate data bars for an invalid symbol.
-  #[test(tokio::test)]
-  async fn invalid_symbol() {
-    let api_info = ApiInfo::from_env().unwrap();
-    let client = Client::new(api_info);
-
-    let start = DateTime::from_str("2022-02-01T00:00:00Z").unwrap();
-    let end = DateTime::from_str("2022-02-20T00:00:00Z").unwrap();
-    let request = ListReqInit::default().init("ABC123", start, end, TimeFrame::OneDay);
-
-    let err = client.issue::<List>(&request).await.unwrap_err();
-    match err {
-      RequestError::Endpoint(ListError::InvalidInput(Ok(_))) => (),
-      _ => panic!("Received unexpected error: {err:?}"),
-    };
-  }
-  */
 }
