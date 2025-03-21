@@ -603,7 +603,6 @@ mod tests {
     .init("AAPL");
 
     let res = client.issue::<List>(&request).await.unwrap();
-    println!("{:?}", res);
     let snapshots = res.snapshots;
 
     assert_eq!(snapshots.len(), 2);
