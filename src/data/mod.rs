@@ -1,6 +1,9 @@
 // Copyright (C) 2020-2022 The apca Developers
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+/// Definitions for the first beta version of the Alpaca Data API.
+pub mod v1beta1;
+
 /// Definitions for the second version of the Alpaca Data API.
 pub mod v2;
 
