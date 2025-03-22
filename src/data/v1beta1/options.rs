@@ -212,7 +212,7 @@ pub struct Snapshot {
   pub minute_bar: Bar,
   /// OHLC aggregate of all the trades in a given interval.
   #[serde(rename = "prevDailyBar")]
-  pub prev_daily_bar: Bar,
+  pub prev_daily_bar: Option<Bar>,
   /// The type is non-exhaustive and open to extension.
   #[doc(hidden)]
   #[serde(skip)]
