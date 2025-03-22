@@ -194,7 +194,7 @@ impl ListReqInit {
 pub struct Snapshot {
   /// The bars of this snapshot.
   #[serde(rename = "dailyBar")]
-  pub daily_bar: Bar,
+  pub daily_bar: Option<Bar>,
   /// The greeks of this snapshot.
   #[serde(rename = "greeks")]
   pub greeks: Option<Greeks>,
