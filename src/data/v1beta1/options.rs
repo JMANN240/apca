@@ -203,13 +203,13 @@ pub struct Snapshot {
   pub implied_volatility: Option<Num>,
   /// The best bid and ask information for this snapshot.
   #[serde(rename = "latestQuote")]
-  pub latest_quore: LatestQuote,
+  pub latest_quore: Option<LatestQuote>,
   /// The most recent trade.
   #[serde(rename = "latestTrade")]
-  pub latest_trade: LatestTrade,
+  pub latest_trade: Option<LatestTrade>,
   /// OHLC aggregate of all the trades in a given interval.
   #[serde(rename = "minuteBar")]
-  pub minute_bar: Bar,
+  pub minute_bar: Option<Bar>,
   /// OHLC aggregate of all the trades in a given interval.
   #[serde(rename = "prevDailyBar")]
   pub prev_daily_bar: Option<Bar>,
