@@ -19,7 +19,7 @@ use crate::Str;
 
 
 /// Represents a contract
-#[derive(Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Contract {
   /// The name of the underlying symbol.
   pub underlying_symbol: String,
