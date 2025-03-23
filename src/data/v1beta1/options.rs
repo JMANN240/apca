@@ -19,7 +19,7 @@ use crate::Str;
 
 
 /// Represents a contract
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Contract {
   /// The name of the underlying symbol.
   pub underlying_symbol: String,
@@ -69,7 +69,7 @@ pub enum Feed {
 
 
 /// An enumeration of the various supported option types.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Serialize)]
 #[non_exhaustive]
 pub enum OptionType {
   /// Call option.
